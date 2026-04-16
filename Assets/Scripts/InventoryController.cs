@@ -12,6 +12,12 @@ public class InventoryController : MonoBehaviour
 
     void Start()
     {
+        // Safety check: if the manager doesn't exist yet, we can't show anything
+        if (ProductManager.Instance == null)
+        {
+            Debug.LogError("ProductManager Instance is missing! Make sure it started in HomeScene.");
+            return;
+        }
         RefreshList();
     }
 
@@ -19,28 +25,40 @@ public class InventoryController : MonoBehaviour
     {
         string name = addInputField.text.Trim();
         if (string.IsNullOrEmpty(name)) return;
-        ProductManager pm = FindObjectOfType<ProductManager>();
-        if (pm == null) return;
-        if (!pm.Products.Contains(name))
-            pm.Products.Add(name);
+
+        // Use the Instance instead of searching the scene
+        if (!ProductManager.Instance.Products.Contains(name))
+        {
+            ProductManager.Instance.Products.Add(name);
+        }
+
         addInputField.text = "";
         RefreshList();
     }
 
     void RefreshList()
     {
-        ProductManager pm = FindObjectOfType<ProductManager>();
-        if (pm == null) return;
+        if (ProductManager.Instance == null) return;
+
+        // Clear the old UI elements
         foreach (Transform child in contentParent)
+        {
             Destroy(child.gameObject);
-        foreach (string product in pm.Products)
+        }
+
+        // Create a new button for every product in the Master List
+        foreach (string product in ProductManager.Instance.Products)
         {
             string captured = product;
             GameObject btn = Instantiate(itemButtonPrefab, contentParent);
+
+            // Set the text on the button
             btn.GetComponentInChildren<TextMeshProUGUI>().text = captured;
+
+            // Setup the remove button logic
             btn.GetComponent<Button>().onClick.AddListener(() =>
             {
-                pm.Products.Remove(captured);
+                ProductManager.Instance.Products.Remove(captured);
                 RefreshList();
             });
         }

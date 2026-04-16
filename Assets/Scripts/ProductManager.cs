@@ -11,11 +11,11 @@ public class ProductManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            DontDestroyOnLoad(gameObject); // Keeps data alive between scenes
         }
         else
         {
-            Destroy(gameObject);
+            Destroy(gameObject); // Prevents duplicates
         }
     }
 }
