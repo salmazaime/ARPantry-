@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,36 +8,21 @@ using TMPro;
 public class ScanController : MonoBehaviour
 {
     [Header("UI References")]
-    public RawImage cameraFeed; // Still keep this for the "look" of the app
+    public RawImage cameraFeed;
     public TextMeshProUGUI statusText;
 
     [Header("Simulated Shopping List")]
-    // This is what the user *should* have bought
     public List<string> idealShoppingList = new List<string> {
         "lait", "pain", "oeuf", "beurre", "pomme", "riz", "pates", "coca"
     };
 
-    private WebCamTexture webCamTexture;
     private bool isScanning = false;
 
     void Start()
     {
-        UpdateStatus("Camera Simulation Active.");
-        StartCamera();
+        UpdateStatus("Appuyez sur SCAN TICKET pour analyser.");
     }
 
-    void StartCamera()
-    {
-        WebCamDevice[] devices = WebCamTexture.devices;
-        if (devices.Length > 0)
-        {
-            webCamTexture = new WebCamTexture(devices[0].name);
-            cameraFeed.texture = webCamTexture;
-            webCamTexture.Play();
-        }
-    }
-
-    // THIS IS LINKED TO YOUR BUTTON
     public void OnScanButtonPressed()
     {
         if (isScanning) return;
@@ -48,17 +33,15 @@ public class ScanController : MonoBehaviour
     {
         isScanning = true;
 
-        // 1. Visual Feedback
-        UpdateStatus("Capturing Ticket...");
+        UpdateStatus("Capture du ticket...");
         yield return new WaitForSeconds(1.0f);
 
-        UpdateStatus("Analyzing Items (Simulated)...");
+        UpdateStatus("Analyse des articles...");
         yield return new WaitForSeconds(1.5f);
 
-        // 2. Logic: Compare Inventory with Ideal List
         if (ProductManager.Instance == null)
         {
-            UpdateStatus("Error: ProductManager Instance not found!");
+            UpdateStatus("Erreur: ProductManager introuvable!");
             isScanning = false;
             yield break;
         }
@@ -66,31 +49,25 @@ public class ScanController : MonoBehaviour
         List<string> missingItems = new List<string>();
         List<string> currentInventory = ProductManager.Instance.Products;
 
-        // Check which items from our hardcoded list are NOT in the inventory
-        foreach (string item in idealShoppingList)
+        // Éléments présents en inventaire mais absents du ticket scanné
+        foreach (string item in currentInventory)
         {
-            // Simple check (converted to lowercase to be safe)
-            if (!currentInventory.Contains(item.ToLower()))
-            {
+            if (!idealShoppingList.Contains(item.ToLower()))
                 missingItems.Add(item);
-            }
         }
 
-        // 3. Display Result
         if (missingItems.Count > 0)
         {
             string missingString = string.Join(", ", missingItems);
             UpdateStatus($"<color=red>MANQUANT:</color>\n{missingString}");
-            Debug.Log("Missing Items: " + missingString);
+            Debug.Log("Missing items: " + missingString);
         }
         else
         {
             UpdateStatus("<color=green>BRAVO!</color>\nTout est dans l'inventaire.");
         }
 
-        // 4. Wait so user can read, then go back
-        yield return new WaitForSeconds(5.0f);
-        GoBack();
+        isScanning = false;
     }
 
     private void UpdateStatus(string msg)
@@ -101,12 +78,6 @@ public class ScanController : MonoBehaviour
 
     public void GoBack()
     {
-        if (webCamTexture != null) webCamTexture.Stop();
         SceneManager.LoadScene("HomeScene");
-    }
-
-    void OnDestroy()
-    {
-        if (webCamTexture != null) webCamTexture.Stop();
     }
 }
